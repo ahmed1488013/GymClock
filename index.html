@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymClock</title>
+    <style>
+        /* General reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* General body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2E2E2E; /* Dark gray background */
+            color: white;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Timer display */
+        #timer {
+            font-size: 30px;
+            font-weight: bold;
+            margin: 20px;
+            color: #FFFFFF; /* White text for visibility */
+        }
+
+        /* Time Inputs for setting workout and rest times */
+        .time-inputs {
+            margin-top: 20px;
+        }
+
+        .time-inputs label {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .time-inputs input {
+            padding: 10px;
+            font-size: 18px;
+            margin: 10px;
+            width: 100px;
+            text-align: center;
+            border-radius: 5px;
+            border: 1px solid #fff;
+            background-color: #444;
+            color: white;
+        }
+
+        /* General button styling */
+        .btn {
+            background-color: #FF4500; /* Orange-red color for start/stop button */
+            border: none;
+            color: white;
+            padding: 20px 40px;
+            font-size: 24px;
+            cursor: pointer;
+            margin: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Hover effect */
+        .btn:hover {
+            background-color: #FF6347; /* Lighter red on hover */
+        }
+
+        /* Button container */
+        .controls {
+            margin-top: 30px;
+        }
+
+        /* Disable the button when inactive */
+        .btn:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            #timer {
+                font-size: 40px;
+            }
+
+            .time-inputs input {
+                width: 80px;
+                font-size: 16px;
+            }
+
+            .btn {
+                padding: 15px 30px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>GymClock</h1>
+
+    <!-- Timer Display -->
+    <div id="timer">00:00</div>
+
+    <!-- Time Inputs for setting workout and rest times -->
+    <div class="time-inputs">
+        <label for="workoutTime">Workout Time (min:sec):</label>
+        <input type="number" id="workoutTime" value="1" min="1"> minutes
+        <input type="number" id="workoutTimeSec" value="0" min="0"> seconds
+        <label for="restTime">Rest Time (min:sec):</label>
+        <input type="number" id="restTime" value="0" min="1"> minutes
+        <input type="number" id="restTimeSec" value="30" min="0"> seconds
+    </div>
+
+    <!-- Timer controls -->
+    <div class="controls">
+        <button class="btn" id="startButton">Start</button>
+        <button class="btn" id="stopButton" disabled>Stop</button>
+        <button class="btn" id="resetButton" disabled>Reset</button>
+    </div>
+
+    <script>
+        let workoutTime = 1;
+        let workoutTimeSec = 0;
+        let restTime = 0;
+        let restTimeSec = 30;
+        let interval;
+        let isTimerRunning = false;
+        let isResting = false;
+
+        const timerDisplay = document.getElementById("timer");
+        const startButton = document.getElementById("startButton");
+        const stopButton = document.getElementById("stopButton");
+        const resetButton = document.getElementById("resetButton");
+
+        // Update timer display
+        function updateTimerDisplay(mins, secs) {
+            timerDisplay.textContent = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Start/Stop timer
+        startButton.addEventListener("click", () => {
+            if (isTimerRunning) {
+                clearInterval(interval);
+                startButton.textContent = "Start";
+                stopButton.disabled = true;
+                resetButton.disabled = false;
+            } else {
+                let remainingTime = isResting ? (restTime * 60 + restTimeSec) : (workoutTime * 60 + workoutTimeSec);
+                interval = setInterval(() => {
+                    let mins = Math.floor(remainingTime / 60);
+                    let secs = remainingTime % 60;
+                    updateTimerDisplay(mins, secs);
+
+                    if (remainingTime === 0) {
+                        clearInterval(interval);
+                        isResting = !isResting;
+                        remainingTime = isResting ? (restTime * 60 + restTimeSec) : (workoutTime * 60 + workoutTimeSec);
+                    } else {
+                        remainingTime--;
+                    }
+                }, 1000);
+                startButton.textContent = "Pause";
+                stopButton.disabled = false;
+            }
+            isTimerRunning = !isTimerRunning;
+        });
+
+        // Stop timer
+        stopButton.addEventListener("click", () => {
+            clearInterval(interval);
+            startButton.textContent = "Start";
+            stopButton.disabled = true;
+            resetButton.disabled = false;
+            isTimerRunning = false;
+        });
+
+        // Reset timer
+        resetButton.addEventListener("click", () => {
+            clearInterval(interval);
+            startButton.textContent = "Start";
+            stopButton.disabled = true;
+            resetButton.disabled = true;
+            isTimerRunning = false;
+            isResting = false;
+            updateTimerDisplay(workoutTime, workoutTimeSec);
+        });
+
+        // Handle input change for workout and rest times
+        document.getElementById("workoutTime").addEventListener("change", (e) => {
+            workoutTime = parseInt(e.target.value, 10);
+        });
+        document.getElementById("workoutTimeSec").addEventListener("change", (e) => {
+            workoutTimeSec = parseInt(e.target.value, 10);
+        });
+        document.getElementById("restTime").addEventListener("change", (e) => {
+            restTime = parseInt(e.target.value, 10);
+        });
+        document.getElementById("restTimeSec").addEventListener("change", (e) => {
+            restTimeSec = parseInt(e.target.value, 10);
+        });
+    </script>
+</body>
+</html>
